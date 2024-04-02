@@ -24,7 +24,7 @@ function Write-Color([String[]]$Text, [ConsoleColor[]]$Color) {
     }
     Write-Host
 }
-Add-BitLockerKeyProtectorAdd-BitsFileAdd-BitsFileAdd-BitsFileAdd-BitsFile
+
 #Multi-Protocol Unified Hello
 New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Force | Out-Null
 New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" | Out-Null
