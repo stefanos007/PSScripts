@@ -1,16 +1,30 @@
 ###### DOCUMENTATION ######
-# Version 1.1.1
 # About TLS cmdlets @ https://learn.microsoft.com/en-us/powershell/module/tls/?view=windowsserver2022-ps
 # TLS support on Windows platforms @ https://learn.microsoft.com/en-us/windows/win32/secauthn/protocols-in-tls-ssl--schannel-ssp-
 # TLS registry settings @ https://learn.microsoft.com/en-us/windows-server/security/tls/tls-registry-settings
 # Cipher suites supported on Windows platforms @ https://learn.microsoft.com/en-us/windows/win32/secauthn/cipher-suites-in-schannel
 # Demystifying SChannel @ https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/demystifying-schannel/ba-p/259233
 #
+#
+# Notes #
+# Execution directly from Git: 
+# Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process;Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/stefanos007/PSScripts/main/harden.ps1").Content
+#
+# Credits #
+# 1. Write-Color Function @ https://stackoverflow.com/questions/2688547/multiple-foreground-colors-in-powershell-in-one-command
+#
 # Contributors #
 #####################
 # 1. Stefanos Daniil
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 
+function Write-Color([String[]]$Text, [ConsoleColor[]]$Color) {
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        Write-Host $Text[$i] -Foreground $Color[$i] -NoNewLine
+    }
+    Write-Host
+}
+Add-BitLockerKeyProtectorAdd-BitsFileAdd-BitsFileAdd-BitsFileAdd-BitsFile
 #Multi-Protocol Unified Hello
 New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Force | Out-Null
 New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" | Out-Null
@@ -70,7 +84,8 @@ New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders
 #Collect Error and Warning events from SChannel provider
 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL' -Name "EventLogging" -Value "3" | Out-Null
 
-Write-Host "SSL 2.0, SSL 3.0, TLS 1.0, TLS 1.1 are DISABLED.`nTLS 1.2 is ENABLED.`n"
+Write-Host "SSL 2.0, SSL 3.0, TLS 1.0, TLS 1.1 are DISABLED." -ForegroundColor Red
+Write-Host "TLS 1.2 is ENABLED.`n" -ForegroundColor Green
 
 #Strong Auth For .NET 
 Write-Host "Verifying whether .NET Frameworks exists..."
@@ -81,11 +96,11 @@ if(Test-Path -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework')
     New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" | Out-Null
     New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" | Out-Null
     New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" | Out-Null
-    Write-Host "64-bit .NET OK!"
+    Write-Color -Text "64-bit .NET ", "OK!" -Color White,Green 
 }
 else
 {
-    Write-Host ".NET not found."
+    Write-Warning ".NET Framework has not been found."
 }
 #32-bit apps
 if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework')
@@ -94,11 +109,11 @@ if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework')
     New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" | Out-Null
     New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" | Out-Null
     New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" | Out-Null
-    Write-Host "32-bit .NET OK!"
+    Write-Color -Text "32-bit .NET ", "OK!" -Color White,Green
 }
 
 # Ciphers Suites
-Write-Host "`nBacking up Cipher Suites and ECC Curves. To revert run the powershell script at C:\tls.ps1 ..."
+Write-Color -Text "`nBacking up Cipher Suites and ECC Curves. To revert run the powershell script at ","C:\tls.ps1 ","..." -Color White,Yellow,White
 Set-Content -Path "C:\tls.ps1" -Value "### Run the following script to revert. ###`n"
 $ciphers = "@("
 ForEach($cipher in (Get-TlsCipherSuite))
@@ -115,7 +130,7 @@ ForEach($ecc in (Get-TlsEccCurve))
 $ciphers = $ciphers.TrimEnd(',') + ")"
 Add-Content -Path "C:\tls.ps1" -Value "`$ecc=$ciphers"
 Add-Content -Path "C:\tls.ps1" -Value "ForEach(`$cipher in `$ciphers)`n`{`n`tEnable-TlsCipherSuite -Name `$cipher`n`}`nForEach(`$curve in `$ecc)`n`{`n`tEnable-TlsEccCurve -Name `$curve`n`}"
-Start-Process -FilePath "C:\Windows\System32\attrib.exe" -ArgumentList @("+h","C:\tls.bak")
+Start-Process -FilePath "C:\Windows\System32\attrib.exe" -ArgumentList @("+h","C:\tls.ps1")
 
 if((Get-ComputerInfo).WindowsProductName -like "Windows Server 2022*")
 {
@@ -208,7 +223,7 @@ elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or
 }
 else
 {
-    Write-Host "Not supported."
+    Write-Warning "Not supported."
 }
 
 # Enable SMB Signing
