@@ -16,3 +16,7 @@ Disable-LocalUser -Name "Administrator" -Confirm $false
 Remove-LocalUser -Name "Guest" -Confirm $false
 Remove-LocalUser -Name "WDAGUtilityAccount" -Confirm $false
 Remove-LocalUser -Name "DefaultAccount" -Confirm $false
+
+Clear-EventLog -LogName System -Confirm $false
+Clear-EventLog -LogName Application -Confirm $false
+Clear-EventLog -LogName Security -Confirm $false
