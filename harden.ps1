@@ -186,6 +186,8 @@ if((Get-ComputerInfo).WindowsProductName -like "Windows Server 2022*")
     New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Force | Out-Null
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+
+    Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
 }
 elseif ((Get-ComputerInfo).WindowsProductName -like "Windows Server 201[69]*")
 {
@@ -218,6 +220,8 @@ elseif ((Get-ComputerInfo).WindowsProductName -like "Windows Server 201[69]*")
     New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Force | Out-Null
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+
+    Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
 }
 elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or ((Get-ComputerInfo).WindowsProductName -like "Windows Server 2008[rR]2*"))
 {
@@ -244,10 +248,12 @@ elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or
     {
         Enable-TlsEccCurve -Name $ecc
     }
+    Write-Host -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`n" -ForegroundColor Green
 }
 else
 {
-    Write-Warning "Not supported."
+    Write-Warning "Unsupported operating system. Removing ciphers backup ..."
+    Remove-Item -Path "C:\tls.ps1" -Force
 }
 
 #Enable SMB Signing
