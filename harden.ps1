@@ -9,14 +9,15 @@
     ### Credits ###
     1. Write-Color Function @ https://stackoverflow.com/questions/2688547/multiple-foreground-colors-in-powershell-in-one-command
     .PARAMETER SMB
-    The SMB option enables SMB signing.
+    The SMB option enables SMB signing. Omit to ignore the functionality.
     .PARAMETER LLMNR
-    The LLMNR option disables the Link-Local Multicast Name Resolution protocol which is considered to be deprecated and insecure.
+    The LLMNR option disables the Link-Local Multicast Name Resolution protocol which is considered to be deprecated and insecure. Omit to ignore the functionality.
     .PARAMETER NBT
-    The NBT option disable the NetBIOS over TCP/IP which is considered to be deprecated and insecure. 
+    The NBT option disable the NetBIOS over TCP/IP which is considered to be deprecated and insecure. Omit to ignore the functionality.
     
     .FUNCTIONALITY 
     harden.ps1 <[-SMB | -LLMNR | -NBT]>
+
     .EXAMPLE
     harden.ps1 -SMB -NBT
     .EXAMPLE
