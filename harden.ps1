@@ -41,8 +41,6 @@ param
     [switch]$NBT
 )
 
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
-
 function Write-Color([String[]]$Text, [ConsoleColor[]]$Color) {
     for ($i = 0; $i -lt $Text.Length; $i++) {
         Write-Host $Text[$i] -Foreground $Color[$i] -NoNewLine
