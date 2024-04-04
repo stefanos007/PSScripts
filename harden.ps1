@@ -21,7 +21,7 @@
     .EXAMPLE
     harden.ps1 -SMB -NBT
     .EXAMPLE
-    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process;Invoke-Expression (Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/stefanos007/PSScripts/main/harden.ps1").Content
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force;Invoke-Expression "& { $((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/stefanos007/PSScripts/main/harden.ps1').Content)} -SMB -LLMNR -NBT" 
     
     .LINK
     1. About TLS cmdlets @ https://learn.microsoft.com/en-us/powershell/module/tls/?view=windowsserver2022-ps
