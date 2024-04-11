@@ -14,9 +14,13 @@
     The LLMNR option disables the Link-Local Multicast Name Resolution protocol which is considered to be deprecated and insecure. Omit to ignore the functionality.
     .PARAMETER NBT
     The NBT option disable the NetBIOS over TCP/IP which is considered to be deprecated and insecure. Omit to ignore the functionality.
-    
+    .PARAMETER NTLM
+    The NTLM option enforces NTLMv2 protocol to all ingress and egress communications. Furthermore it denies incoming NT and NTLMv1 protocols as authentication mechanisms.
+    .PARAMETER RDP
+    The RDP option enables NLA (Network Level Authentication) in Remote Desktop connections. In addition it increases the encryption level in RDP connections to be compliant with FIPS standards.
+
     .FUNCTIONALITY 
-    harden.ps1 <[-SMB | -LLMNR | -NBT]>
+    harden.ps1 <[-SMB | -LLMNR | -NBT | -NTLM | -RDP]>
 
     .EXAMPLE
     harden.ps1 -SMB -NBT
@@ -33,13 +37,19 @@
     4. Cipher suites supported on Windows platforms @ https://learn.microsoft.com/en-us/windows/win32/secauthn/cipher-suites-in-schannel
     .LINK
     5. Demystifying SChannel @ https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/demystifying-schannel/ba-p/259233
+    .LINK
+    6. Enforce NTLMv2 @ https://kb.iu.edu/d/atcb
+    .LINK
+    7. RDP encryption level @ https://learn.microsoft.com/en-us/answers/questions/191055/how-to-changeterminal-services-encryption-level-to
 #>
 
 param 
 (
     [switch]$SMB,
     [switch]$LLMNR,
-    [switch]$NBT
+    [switch]$NBT,
+    [switch]$NTLM,
+    [switch]$RDP
 )
 
 function Write-Color([String[]]$Text, [ConsoleColor[]]$Color) {
@@ -137,24 +147,27 @@ if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework')
 }
 
 #Ciphers Suites
-Write-Color -Text "`nBacking up Cipher Suites and ECC Curves. To revert run the powershell script at ","C:\tls.ps1 ","..." -Color White,Yellow,White
-Set-Content -Path "C:\tls.ps1" -Value "### Run the following script to revert. ###`n"
-$ciphers = "@("
-ForEach($cipher in (Get-TlsCipherSuite))
+if(!(Test-Path -Path "C:\tls.ps1"))
 {
-	$ciphers = $ciphers + "`"" + $cipher.Name + "`","
+    Write-Color -Text "`nBacking up Cipher Suites and ECC Curves. To revert run the powershell script at ","C:\tls.ps1 ","..." -Color White,Yellow,White
+    Set-Content -Path "C:\tls.ps1" -Value "### Run the following script to revert. ###`n"
+    $ciphers = "@("
+    ForEach($cipher in (Get-TlsCipherSuite))
+    {
+        $ciphers = $ciphers + "`"" + $cipher.Name + "`","
+    }
+    $ciphers = $ciphers.TrimEnd(',') + ")"
+    Add-Content -Path "C:\tls.ps1" -Value "`$ciphers=$ciphers"
+    $ciphers = "@("
+    ForEach($ecc in (Get-TlsEccCurve))
+    {
+        $ciphers = $ciphers + "`"" + $ecc + "`","
+    }
+    $ciphers = $ciphers.TrimEnd(',') + ")"
+    Add-Content -Path "C:\tls.ps1" -Value "`$ecc=$ciphers"
+    Add-Content -Path "C:\tls.ps1" -Value "ForEach(`$cipher in `$ciphers)`n`{`n`tEnable-TlsCipherSuite -Name `$cipher`n`}`nForEach(`$curve in `$ecc)`n`{`n`tEnable-TlsEccCurve -Name `$curve`n`}"
+    Start-Process -FilePath "C:\Windows\System32\attrib.exe" -ArgumentList @("+h","C:\tls.ps1")
 }
-$ciphers = $ciphers.TrimEnd(',') + ")"
-Add-Content -Path "C:\tls.ps1" -Value "`$ciphers=$ciphers"
-$ciphers = "@("
-ForEach($ecc in (Get-TlsEccCurve))
-{
-	$ciphers = $ciphers + "`"" + $ecc + "`","
-}
-$ciphers = $ciphers.TrimEnd(',') + ")"
-Add-Content -Path "C:\tls.ps1" -Value "`$ecc=$ciphers"
-Add-Content -Path "C:\tls.ps1" -Value "ForEach(`$cipher in `$ciphers)`n`{`n`tEnable-TlsCipherSuite -Name `$cipher`n`}`nForEach(`$curve in `$ecc)`n`{`n`tEnable-TlsEccCurve -Name `$curve`n`}"
-Start-Process -FilePath "C:\Windows\System32\attrib.exe" -ArgumentList @("+h","C:\tls.ps1")
 
 if((Get-ComputerInfo).WindowsProductName -like "Windows Server 2022*")
 {
@@ -252,7 +265,7 @@ elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or
 }
 else
 {
-    Write-Warning "Unsupported operating system. Removing ciphers backup ..."
+    Write-Warning "Unsupported operating system. Removing ciphers' backup ..."
     Remove-Item -Path "C:\tls.ps1" -Force
 }
 
@@ -262,8 +275,8 @@ if($SMB)
     #Client
     Set-SmbClientConfiguration -EnableSecuritySignature $true -RequireSecuritySignature $true -Force
     #Server
-    Set-SmbServerConfiguration -EnableSecuritySignature $true -RequireSecuritySignature $true -Force
-    Write-Host "SMB Signing is enabled and set to REQUIRED." -ForegroundColor Green
+    Set-SmbServerConfiguration -EnableSecuritySignature $true -RequireSecuritySignature $true -AuditSmb1Access $true -EnableSMB1Protocol $false -EnableSMB2Protocol $true -Force
+    Write-Color -Text "SMBv1 is", " DISABLED."," SMB Signing is enabled and set to", " REQUIRED." -Color White,Red,White,Green
 }
 
 #Disable LLMNR
@@ -278,12 +291,28 @@ if($LLMNR)
         New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Force | Out-Null
         New-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name "EnableMultiCast" -Value "0" -PropertyType "DWORD" -Force | Out-Null
     }
-    Write-Host "Link-Local Multicast Name Resolution(LLMNR) has been disabled." -ForegroundColor Green
+    Write-Color -Text "Link-Local Multicast Name Resolution(LLMNR) has been", " DISABLED." -Color White,Red
 }
 
 #Disable NBT-NS
 if($NBT)
 {
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces\Tcpip*' -Name "NetbiosOptions" -Value "2" -Force | Out-Null
-    Write-Host "NetBIOS Over TCP/IP(NBT-NS) has been disabled." -ForegroundColor Green
+    Write-Color -Text "NetBIOS Over TCP/IP(NBT-NS) has been", " DISABLED." -Color White,Red
+}
+
+#Disable NT & NTLMv1 & Enforce NTLMv2
+if($NTLM)
+{
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name "LmCompatibilityLevel" -Value "5" -PropertyType "DWORD" -Force | Out-Null
+    Write-Color -Text "Authentication protocols ","NT ","&"," NTLMv1"," have been disabled and denied."," NTLMv2 is enforced." -Color White,Red,White,Red,White,Green
+}
+
+#Increase RDP encryption level to 4 (FIPS-compliant) & Enable Network Level Authentication (NLA)
+if($RDP)
+{
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value "2" -Force | Out-Null
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "MinEncryptionLevel" -Value "4" -Force | Out-Null
+    Write-Color -Text "RDP minimum encryption level has been set on ","4 (FIPS compliant)" -Color White,Green
 }
