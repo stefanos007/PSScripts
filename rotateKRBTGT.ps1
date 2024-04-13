@@ -3,11 +3,13 @@
     Simple script to be used together with a scheduled task, to rotate Kerberos Service Account's (krbtgt) password every 180 days.
 
     .LINK
-    1. Pseudo password generator in PowerShell @ https://www.sharepointdiary.com/2020/04/powershell-generate-random-password.html
-    2. ATT&CK MITRE M1015 @ https://attack.mitre.org/mitigations/M1015/
+    1. ATT&CK MITRE M1015 @ https://attack.mitre.org/mitigations/M1015/
     
     .NOTES
     According to ATT&CK MITRE (M1015) changing the password of krbtgt principal is essential to counter Kerberos protocol related attacks, such as compromising a Kerberos Golden ticket (T1558/.001)
+
+    ### Credits ###
+    1. Pseudo password generator in PowerShell @ https://www.sharepointdiary.com/2020/04/powershell-generate-random-password.html
     
     ### Contributors ###
     1. Stefanos Daniil
