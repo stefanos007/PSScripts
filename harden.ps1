@@ -291,6 +291,8 @@ if($LLMNR)
         New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Force | Out-Null
         New-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name "EnableMultiCast" -Value "0" -PropertyType "DWORD" -Force | Out-Null
     }
+    Set-NetFirewallRule -Name "FPS-LLMNR-In-UDP" -Profile Any -Enabled False
+    Set-NetFirewallRule -Name "FPS-LLMNR-Out-UDP" -Profile Any -Enabled True -Action Block
     Write-Color -Text "Link-Local Multicast Name Resolution(LLMNR) has been", " DISABLED." -Color White,Red
 }
 
@@ -298,6 +300,8 @@ if($LLMNR)
 if($NBT)
 {
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces\Tcpip*' -Name "NetbiosOptions" -Value "2" -Force | Out-Null
+    Set-NetFirewallRule -Name @("FPS-NB_Session-In-TCP-NoScope","FPS-NB_Datagram-In-UDP-NoScope","FPS-NB_Name-In-UDP-NoScope") -Profile Domain -Enabled False
+    Set-NetFirewallRule -Name @("FPS-NB_Session-Out-TCP-NoScope","FPS-NB_Datagram-Out-UDP-NoScope","FPS-NB_Name-Out-UDP-NoScope") -Profile Domain -Enabled True -Action Block
     Write-Color -Text "NetBIOS Over TCP/IP(NBT-NS) has been", " DISABLED." -Color White,Red
 }
 
