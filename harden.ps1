@@ -20,12 +20,12 @@
     The RDP option enables NLA (Network Level Authentication) in Remote Desktop connections. In addition it increases the encryption level in RDP connections to be compliant with FIPS standards.
 
     .FUNCTIONALITY 
-    harden.ps1 <[-SMB | -LLMNR | -NBT | -NTLM | -RDP]>
+    harden.ps1 <[-TLS | -SMB | -LLMNR | -NBT | -NTLM | -RDP]>
 
     .EXAMPLE
-    harden.ps1 -SMB -NBT
+    harden.ps1 -TLS -NBT
     .EXAMPLE
-    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force;Invoke-Expression "& { $((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/stefanos007/PSScripts/main/harden.ps1').Content)} -SMB -LLMNR -NBT" 
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force;Invoke-Expression "& { $((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/stefanos007/PSScripts/main/harden.ps1').Content)} -TLS" 
     
     .LINK
     1. About TLS cmdlets @ https://learn.microsoft.com/en-us/powershell/module/tls/?view=windowsserver2022-ps
@@ -45,6 +45,7 @@
 
 param 
 (
+    [switch]$TLS,
     [switch]$SMB,
     [switch]$LLMNR,
     [switch]$NBT,
@@ -52,224 +53,240 @@ param
     [switch]$RDP
 )
 
-function Write-Color([String[]]$Text, [ConsoleColor[]]$Color) {
-    for ($i = 0; $i -lt $Text.Length; $i++) {
+if($args.Count -eq 0)
+{
+    Write-Warning "You should set at least one (1) argument. Run `"Get-Help`" for examples."
+    exit
+}
+
+function Write-Color([String[]]$Text, [ConsoleColor[]]$Color) 
+{
+    for ($i = 0; $i -lt $Text.Length; $i++) 
+    {
         Write-Host $Text[$i] -Foreground $Color[$i] -NoNewLine
     }
     Write-Host
 }
 
-#Multi-Protocol Unified Hello
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-
-#PCT 1.0
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-
-#SSL 2.0
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-
-#SSL 3.0
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-
-#TLS 1.0
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-
-#TLS 1.1
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-
-#TLS 1.2
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client' -Name "Enabled" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client' -Name "DisabledByDefault" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server' -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server' -Name "Enabled" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server' -Name "DisabledByDefault" -Value "0" -PropertyType "DWORD" -Force | Out-Null
-
-#Collect Error and Warning events from SChannel provider
-Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL' -Name "EventLogging" -Value "3" -Force | Out-Null
-
-Write-Host "SSL 2.0, SSL 3.0, TLS 1.0, TLS 1.1 are DISABLED." -ForegroundColor Red
-Write-Host "TLS 1.2 is ENABLED.`n" -ForegroundColor Green
-
-#Strong Auth For .NET 
-Write-Host "Verifying whether .NET Frameworks exists..."
-#64-bit apps
-if(Test-Path -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework')
+#Backup current TLS ECC and Ciphers configuration
+function Backup-Tls
 {
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    Write-Color -Text "64-bit .NET ", "OK!" -Color White,Green 
-}
-else
-{
-    Write-Warning ".NET Framework has not been found."
-}
-#32-bit apps
-if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework')
-{
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-    Write-Color -Text "32-bit .NET ", "OK!" -Color White,Green
+    if(!(Test-Path -Path "C:\Harden Backup\tls.ps1"))
+    {
+        Write-Color -Text "`nBacking up Cipher Suites and ECC Curves. To revert run the powershell script at ","C:\Harden Backup\tls.ps1 ","..." -Color White,Yellow,White
+        Set-Content -Path "C:\Harden Backup\tls.ps1" -Value "### Run the following script to revert. ###`n"
+        $ciphers = "@("
+        ForEach($cipher in (Get-TlsCipherSuite))
+        {
+            $ciphers = $ciphers + "`"" + $cipher.Name + "`","
+        }
+        $ciphers = $ciphers.TrimEnd(',') + ")"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "`$ciphers=$ciphers"
+        $ciphers = "@("
+        ForEach($ecc in (Get-TlsEccCurve))
+        {
+            $ciphers = $ciphers + "`"" + $ecc + "`","
+        }
+        $ciphers = $ciphers.TrimEnd(',') + ")"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "`$ecc=$ciphers"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "ForEach(`$cipher in `$ciphers)`n`{`n`tEnable-TlsCipherSuite -Name `$cipher`n`}`nForEach(`$curve in `$ecc)`n`{`n`tEnable-TlsEccCurve -Name `$curve`n`}"
+    }
 }
 
-#Ciphers Suites
-if(!(Test-Path -Path "C:\tls.ps1"))
+if(New-Item -Path "C:\" -Name "Harden Backup" -ItemType Directory -ErrorAction Ignore)
 {
-    Write-Color -Text "`nBacking up Cipher Suites and ECC Curves. To revert run the powershell script at ","C:\tls.ps1 ","..." -Color White,Yellow,White
-    Set-Content -Path "C:\tls.ps1" -Value "### Run the following script to revert. ###`n"
-    $ciphers = "@("
-    ForEach($cipher in (Get-TlsCipherSuite))
-    {
-        $ciphers = $ciphers + "`"" + $cipher.Name + "`","
-    }
-    $ciphers = $ciphers.TrimEnd(',') + ")"
-    Add-Content -Path "C:\tls.ps1" -Value "`$ciphers=$ciphers"
-    $ciphers = "@("
-    ForEach($ecc in (Get-TlsEccCurve))
-    {
-        $ciphers = $ciphers + "`"" + $ecc + "`","
-    }
-    $ciphers = $ciphers.TrimEnd(',') + ")"
-    Add-Content -Path "C:\tls.ps1" -Value "`$ecc=$ciphers"
-    Add-Content -Path "C:\tls.ps1" -Value "ForEach(`$cipher in `$ciphers)`n`{`n`tEnable-TlsCipherSuite -Name `$cipher`n`}`nForEach(`$curve in `$ecc)`n`{`n`tEnable-TlsEccCurve -Name `$curve`n`}"
-    Start-Process -FilePath "C:\Windows\System32\attrib.exe" -ArgumentList @("+h","C:\tls.ps1")
+    Start-Process -FilePath "C:\Windows\System32\attrib.exe" -ArgumentList @("+h",'"C:\Harden Backup"')
+    Write-Host "Configuration will be backed up on `"C:\Harden Backup`" directory."
 }
 
-if((Get-ComputerInfo).WindowsProductName -like "Windows Server 2022*")
+if($TLS)
 {
-    #Windows Server 2022 Ciphers and Curves
-    #Disable current cipher suites and ecc curves
-    ForEach($cipher in (Get-TlsCipherSuite))
-    {
-        Disable-TlsCipherSuite -Name $cipher.Name
-    }
-    ForEach($ecc in (Get-TlsEccCurve))
-    {
-        Disable-TlsEccCurve -Name $ecc
-    }
-    $ciphers = @("TLS_AES_256_GCM_SHA384","TLS_AES_128_GCM_SHA256","TLS_CHACHA20_POLY1305_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256")
-    $curves = @("nistP521","NistP384","NistP256","curve25519")
+    #Backup SChannel
+    Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL",'"C:\Harden Backup\protocols.reg"',"/y")
 
-    #Enable strong cipher suites and ecc curves
-    ForEach($cipher in $ciphers)
+    #Multi-Protocol Unified Hello
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+    #PCT 1.0
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\PCT 1.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+    #SSL 2.0
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+    #SSL 3.0
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 3.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+    #TLS 1.0
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+    #TLS 1.1
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Client' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server' -Name "Enabled" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.1\Server' -Name "DisabledByDefault" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+    #TLS 1.2
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client' -Name "Enabled" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Client' -Name "DisabledByDefault" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server' -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server' -Name "Enabled" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.2\Server' -Name "DisabledByDefault" -Value "0" -PropertyType "DWORD" -Force | Out-Null
+
+    #Collect Error and Warning events from SChannel provider
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL' -Name "EventLogging" -Value "3" -Force | Out-Null
+
+    Write-Host "SSL 2.0, SSL 3.0, TLS 1.0, TLS 1.1 are DISABLED." -ForegroundColor Red
+    Write-Host "TLS 1.2 is ENABLED.`n" -ForegroundColor Green
+
+    #Strong Auth For .NET 
+    Write-Host "Verifying whether .NET Frameworks exists..."
+    #64-bit apps
+    if(Test-Path -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework')
     {
-        Enable-TlsCipherSuite -Name $cipher
+        #Backup .NET 64-bit
+        Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SOFTWARE\Microsoft\.NETFramework",'"C:\Harden Backup\dotNETx64.reg"',"/y")
+
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        Write-Color -Text "64-bit .NET ", "OK!" -Color White,Green 
     }
-    ForEach($ecc in $curves)
+    else
     {
-        Enable-TlsEccCurve -Name $ecc
+        Write-Warning ".NET Framework has not been found."
+    }
+    #32-bit apps
+    if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework')
+    {
+        #Backup .NET 32-bit
+        Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SOFTWARE\WOW6432Node\Microsoft\.NETFramework",'"C:\Harden Backup\dotNETx32.reg"',"/y")
+
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        Write-Color -Text "32-bit .NET ", "OK!" -Color White,Green
     }
 
-    #Diffie-Hellman & RSA key bit length
-    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Force | Out-Null
-    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+    if(((Get-ComputerInfo).WindowsProductName -like "Windows Server 2022*") -or ((Get-ComputerInfo).OsName -like "*Windows 11*"))
+    {
+        Backup-Tls
+        
+        #Windows Server 2022 Ciphers and Curves
+        #Disable current cipher suites and ecc curves
+        ForEach($cipher in (Get-TlsCipherSuite))
+        {
+            Disable-TlsCipherSuite -Name $cipher.Name
+        }
+        ForEach($ecc in (Get-TlsEccCurve))
+        {
+            Disable-TlsEccCurve -Name $ecc
+        }
+        $ciphers = @("TLS_AES_256_GCM_SHA384","TLS_AES_128_GCM_SHA256","TLS_CHACHA20_POLY1305_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256")
+        $curves = @("nistP521","NistP384","NistP256","curve25519")
 
-    Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
+        #Enable strong cipher suites and ecc curves
+        ForEach($cipher in $ciphers)
+        {
+            Enable-TlsCipherSuite -Name $cipher
+        }
+        ForEach($ecc in $curves)
+        {
+            Enable-TlsEccCurve -Name $ecc
+        }
+
+        #Diffie-Hellman & RSA key bit length
+        New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Force | Out-Null
+        New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+
+        Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
+    }
+    elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 201[69]*") -or ((Get-ComputerInfo).OsName -like "*Windows 10*"))
+    {
+        Backup-Tls
+        
+        #Windows Server 2019 and 2016 Ciphers and Curves
+        #Disable current cipher suites and ecc curves
+        ForEach($cipher in (Get-TlsCipherSuite))
+        {
+            Disable-TlsCipherSuite -Name $cipher.Name
+        }
+        ForEach($ecc in (Get-TlsEccCurve))
+        {
+            Disable-TlsEccCurve -Name $ecc
+        }
+        
+        $ciphers = @("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256")
+        $curves = @("nistP521","NistP384","NistP256","curve25519")
+
+        #Enable strong cipher suites and ecc curves
+        ForEach($cipher in $ciphers)
+        {
+            Enable-TlsCipherSuite -Name $cipher
+        }
+        ForEach($ecc in $curves)
+        {
+            Enable-TlsEccCurve -Name $ecc
+        }
+
+        #Diffie-Hellman & RSA key bit length
+        New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Force | Out-Null
+        New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
+
+        Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
+    }
+    elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or ((Get-ComputerInfo).WindowsProductName -like "Windows Server 2008[rR]2*"))
+    {
+        #Windows Server 2012R2, 2012 and 2008R2 Ciphers and Curves
+        #Backup ciphers & ecc
+        Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\SSL\00010002",'"C:\Harden Backup\ciphers-ecc.reg"',"/y")
+        $ciphers = @("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384_P521","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384_P384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256_P521","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256_P384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256_P256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384_P521","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384_P384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256_P521","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256_P384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256_P256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P521","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P384","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P256","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P521","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_DHE_DSS_WITH_AES_256_CBC_SHA256","TLS_DHE_DSS_WITH_AES_128_CBC_SHA256")
+        $curves = @("nistP521","NistP384","NistP256","curve25519")
+
+        #Enable strong cipher suites and ecc curves
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\SSL\00010002' -Name "Functions" -Value $ciphers -Force | Out-Null
+        New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\SSL\00010002' -Name "EccCurves" -Value $curves -PropertyType "Multistring" -Force | Out-Null
+    }
+    else
+    {
+        Write-Warning "Unsupported operating system."
+    }
 }
-elseif ((Get-ComputerInfo).WindowsProductName -like "Windows Server 201[69]*")
-{
-    #Windows Server 2019 and 2016 Ciphers and Curves
-    #Disable current cipher suites and ecc curves
-    ForEach($cipher in (Get-TlsCipherSuite))
-    {
-        Disable-TlsCipherSuite -Name $cipher.Name
-    }
-    ForEach($ecc in (Get-TlsEccCurve))
-    {
-        Disable-TlsEccCurve -Name $ecc
-    }
-    
-    $ciphers = @("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256")
-    $curves = @("nistP521","NistP384","NistP256","curve25519")
 
-    #Enable strong cipher suites and ecc curves
-    ForEach($cipher in $ciphers)
-    {
-        Enable-TlsCipherSuite -Name $cipher
-    }
-    ForEach($ecc in $curves)
-    {
-        Enable-TlsEccCurve -Name $ecc
-    }
-
-    #Diffie-Hellman & RSA key bit length
-    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Force | Out-Null
-    New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
-    New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\PKCS' -Name "ClientMinKeyBitLength" -Value "0x800" -PropertyType "DWORD" -Force | Out-Null
-
-    Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
-}
-elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or ((Get-ComputerInfo).WindowsProductName -like "Windows Server 2008[rR]2*"))
-{
-    #Windows Server 2012R2, 2012 and 2008R2 Ciphers and Curves
-    #Disable current cipher suites and ecc curves
-    ForEach($cipher in (Get-TlsCipherSuite))
-    {
-        Disable-TlsCipherSuite -Name $cipher.Name
-    }
-    ForEach($ecc in (Get-TlsEccCurve))
-    {
-        Disable-TlsEccCurve -Name $ecc
-    }
-    
-    $ciphers = @("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384_P521","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384_P384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256_P521","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256_P384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256_P256","TLS_DHE_RSA_WITH_AES_256_GCM_SHA384","TLS_DHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384_P521","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384_P384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256_P521","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256_P384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256_P256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P521","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P384","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P256","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P521","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_DHE_DSS_WITH_AES_256_CBC_SHA256","TLS_DHE_DSS_WITH_AES_128_CBC_SHA256")
-    $curves = @("nistP521","NistP384","NistP256","curve25519")
-
-    #Enable strong cipher suites and ecc curves
-    ForEach($cipher in $ciphers)
-    {
-        Enable-TlsCipherSuite -Name $cipher
-    }
-    ForEach($ecc in $curves)
-    {
-        Enable-TlsEccCurve -Name $ecc
-    }
-    Write-Host -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`n" -ForegroundColor Green
-}
-else
-{
-    Write-Warning "Unsupported operating system. Removing ciphers' backup ..."
-    Remove-Item -Path "C:\tls.ps1" -Force
-}
-
-#Enable SMB Signing
+#Enable SMB Signing & disable SMB1.x
 if($SMB)
 {
     #Client
@@ -284,6 +301,9 @@ if($LLMNR)
 {
     if(Test-Path -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient')
     {
+        #Backup DNS Client configuration
+        Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient",'"C:\Harden Backup\DNS.reg"',"/y")
+
         New-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name "EnableMultiCast" -Value "0" -PropertyType "DWORD" -Force | Out-Null
     }
     else
@@ -291,30 +311,39 @@ if($LLMNR)
         New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Force | Out-Null
         New-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name "EnableMultiCast" -Value "0" -PropertyType "DWORD" -Force | Out-Null
     }
-    Set-NetFirewallRule -Name "FPS-LLMNR-In-UDP" -Profile Any -Enabled False
-    Set-NetFirewallRule -Name "FPS-LLMNR-Out-UDP" -Profile Any -Enabled True -Action Block
+    #Set-NetFirewallRule -Name "FPS-LLMNR-In-UDP" -Profile Any -Enabled False
+    #Set-NetFirewallRule -Name "FPS-LLMNR-Out-UDP" -Profile Any -Enabled True -Action Block
     Write-Color -Text "Link-Local Multicast Name Resolution(LLMNR) has been", " DISABLED." -Color White,Red
 }
 
 #Disable NBT-NS
 if($NBT)
 {
+    #Backup NETBIOS configuration in interfaces
+    Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces",'"C:\Harden Backup\interfaces.reg"',"/y")
+
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces\Tcpip*' -Name "NetbiosOptions" -Value "2" -Force | Out-Null
-    Set-NetFirewallRule -Name @("FPS-NB_Session-In-TCP-NoScope","FPS-NB_Datagram-In-UDP-NoScope","FPS-NB_Name-In-UDP-NoScope") -Profile Domain -Enabled False
-    Set-NetFirewallRule -Name @("FPS-NB_Session-Out-TCP-NoScope","FPS-NB_Datagram-Out-UDP-NoScope","FPS-NB_Name-Out-UDP-NoScope") -Profile Domain -Enabled True -Action Block
+    #Set-NetFirewallRule -Name @("FPS-NB_Session-In-TCP-NoScope","FPS-NB_Datagram-In-UDP-NoScope","FPS-NB_Name-In-UDP-NoScope") -Profile Domain -Enabled False
+    #Set-NetFirewallRule -Name @("FPS-NB_Session-Out-TCP-NoScope","FPS-NB_Datagram-Out-UDP-NoScope","FPS-NB_Name-Out-UDP-NoScope") -Profile Domain -Enabled True -Action Block
     Write-Color -Text "NetBIOS Over TCP/IP(NBT-NS) has been", " DISABLED." -Color White,Red
 }
 
-#Disable NT & NTLMv1 & Enforce NTLMv2
+#Disable LM & NTLMv1 & Enforce NTLMv2
 if($NTLM)
 {
+    #Backup LSA configuration
+    Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SYSTEM\CurrentControlSet\Control\Lsa",'"C:\Harden Backup\LSA.reg"',"/y")
+    
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name "LmCompatibilityLevel" -Value "5" -PropertyType "DWORD" -Force | Out-Null
-    Write-Color -Text "Authentication protocols ","NT ","&"," NTLMv1"," have been disabled and denied."," NTLMv2 is enforced." -Color White,Red,White,Red,White,Green
+    Write-Color -Text "Authentication protocols ","LM ","&"," NTLMv1"," have been disabled and denied."," NTLMv2 is enforced." -Color White,Red,White,Red,White,Green
 }
 
 #Increase RDP encryption level to 4 (FIPS-compliant) & Enable Network Level Authentication (NLA)
 if($RDP)
 {
+    #Backup RDP configuration
+    Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export",'"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp"','"C:\Harden Backup\RDP.reg"',"/y")
+    
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value "1" -PropertyType "DWORD" -Force | Out-Null
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value "2" -Force | Out-Null
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "MinEncryptionLevel" -Value "4" -Force | Out-Null
