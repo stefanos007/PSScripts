@@ -53,9 +53,9 @@ param
     [switch]$RDP
 )
 
-if($args.Count -eq 0)
+if($PSBoundParameters.Count -eq 0)
 {
-    Write-Warning "You should set at least one (1) argument. Run `"Get-Help`" for examples."
+    Write-Warning "You should set at least one (1) parameter. Run `"Get-Help`" for examples."
     exit
 }
 
