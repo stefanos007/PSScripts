@@ -197,7 +197,7 @@ if($TLS)
         Write-Color -Text "32-bit .NET ", "OK!" -Color White,Green
     }
 
-    if(((Get-ComputerInfo).WindowsProductName -like "Windows Server 2022*") -or ((Get-ComputerInfo).OsName -like "*Windows 11*"))
+    if(((Get-WmiObject -ClassName Win32_OperatingSystem).Caption -like "*Windows Server 2022*") -or ((Get-WmiObject -ClassName Win32_OperatingSystem).Caption -like "*Windows 11*"))
     {
         Backup-Tls
         
@@ -232,7 +232,7 @@ if($TLS)
 
         Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
     }
-    elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 201[69]*") -or ((Get-ComputerInfo).OsName -like "*Windows 10*"))
+    elseif (((Get-WmiObject -ClassName Win32_OperatingSystem).Caption -like "*Windows Server 201[69]*") -or ((Get-WmiObject -ClassName Win32_OperatingSystem).Caption -like "*Windows 10*"))
     {
         Backup-Tls
         
@@ -268,7 +268,7 @@ if($TLS)
 
         Write-Color -Text "Strong ciphers and curves have been successfully set. Use `"Get-TlsCipherSuite`" and `"Get-TlsEccCurve`" to verify.`nMinimum Diffie-Hellman and RSA client key bit length is set at ","2048 bits.`n" -Color Green,Yellow
     }
-    elseif (((Get-ComputerInfo).WindowsProductName -like "Windows Server 2012*") -or ((Get-ComputerInfo).WindowsProductName -like "Windows Server 2008[rR]2*"))
+    elseif (((Get-WmiObject -ClassName Win32_OperatingSystem).Caption -like "*Windows Server 2012*") -or ((Get-WmiObject -ClassName Win32_OperatingSystem).Caption -like "*Windows Server 2008 R2*"))
     {
         #Windows Server 2012R2, 2012 and 2008R2 Ciphers and Curves
         #Backup ciphers & ecc
@@ -282,7 +282,8 @@ if($TLS)
     }
     else
     {
-        Write-Warning "Unsupported operating system."
+        #Windows Server 2008 is not supported. Powershell does not exist.
+		Write-Warning "Unsupported operating system."
     }
 }
 
@@ -292,7 +293,7 @@ if($SMB)
     #Client
     Set-SmbClientConfiguration -EnableSecuritySignature $true -RequireSecuritySignature $true -Force
     #Server
-    Set-SmbServerConfiguration -EnableSecuritySignature $true -RequireSecuritySignature $true -AuditSmb1Access $true -EnableSMB1Protocol $false -EnableSMB2Protocol $true -Force
+    Set-SmbServerConfiguration -EnableSecuritySignature $true -RequireSecuritySignature $true -EnableSMB1Protocol $false -EnableSMB2Protocol $true -Force
     Write-Color -Text "SMBv1 is", " DISABLED."," SMB Signing is enabled and set to", " REQUIRED." -Color White,Red,White,Green
 }
 
