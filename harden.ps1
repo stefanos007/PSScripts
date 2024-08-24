@@ -3,6 +3,9 @@
     The purpose of the script, is to help system administrators harden basic security components of Windows systems and patch or disable deprecated protocols which may be potentially exploited.    
     .NOTES
     Execution is also supported via web invokation in GitHub. Please check EXAMPLE 2.
+    ### Version ###
+    v1.2.9
+
     ### Contributors ###
     1. Stefanos Daniil
 
@@ -26,7 +29,7 @@
     harden.ps1 -TLS -NBT
     .EXAMPLE
     Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force;Invoke-Expression "& { $((Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/stefanos007/PSScripts/main/harden.ps1').Content)} -TLS" 
-    
+
     .LINK
     1. About TLS cmdlets @ https://learn.microsoft.com/en-us/powershell/module/tls/?view=windowsserver2022-ps
     .LINK
@@ -90,6 +93,10 @@ function Backup-Tls
         $ciphers = $ciphers.TrimEnd(',') + ")"
         Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "`$ecc=$ciphers"
         Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "ForEach(`$cipher in `$ciphers)`n`{`n`tEnable-TlsCipherSuite -Name `$cipher`n`}`nForEach(`$curve in `$ecc)`n`{`n`tEnable-TlsEccCurve -Name `$curve`n`}"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name 'SchUseStrongCrypto' -ErrorAction Ignore`nRemove-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name 'SystemDefaultTlsVersions' -ErrorAction Ignore"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "Remove-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name 'SchUseStrongCrypto' -ErrorAction Ignore`nRemove-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name 'SystemDefaultTlsVersions' -ErrorAction Ignore"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "Remove-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name 'SchUseStrongCrypto' -ErrorAction Ignore`nRemove-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name 'SystemDefaultTlsVersions' -ErrorAction Ignore"
+        Add-Content -Path "C:\Harden Backup\tls.ps1" -Value "Remove-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name 'SchUseStrongCrypto' -ErrorAction Ignore`nRemove-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name 'SystemDefaultTlsVersions' -ErrorAction Ignore"  
     }
 }
 
@@ -171,13 +178,14 @@ if($TLS)
     #64-bit apps
     if(Test-Path -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework')
     {
-        #Backup .NET 64-bit
-        Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SOFTWARE\Microsoft\.NETFramework",'"C:\Harden Backup\dotNETx64.reg"',"/y")
-
         New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
         New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-        New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+        if(Test-Path -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727')
+        {
+            New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+            New-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        }
         Write-Color -Text "64-bit .NET ", "OK!" -Color White,Green 
     }
     else
@@ -187,13 +195,13 @@ if($TLS)
     #32-bit apps
     if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework')
     {
-        #Backup .NET 32-bit
-        Start-Process -FilePath "C:\Windows\System32\reg.exe" -ArgumentList @("export","HKLM\SOFTWARE\WOW6432Node\Microsoft\.NETFramework",'"C:\Harden Backup\dotNETx32.reg"',"/y")
-
         New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
         New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-        New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
-        New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        if(Test-Path -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727')
+        {
+            New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SchUseStrongCrypto" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+            New-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v2.0.50727' -Name "SystemDefaultTlsVersions" -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        }
         Write-Color -Text "32-bit .NET ", "OK!" -Color White,Green
     }
 
