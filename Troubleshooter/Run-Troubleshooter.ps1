@@ -7,8 +7,8 @@ if(!(New-Object System.Security.Principal.WindowsPrincipal([System.Security.Prin
 }
 
 $commands = @{
-	"RDP Connections" = Get-WinEvent -FilterHashtable @{"LogName" = "Microsoft-Windows-RemoteDesktopServices-RdpCoreTS/Operational"; "Id" = "131"} | ForEach { $log = [xml]$_.ToXml();$log = $log.Event.EventData.Data[1]."`#text" -replace "[\[\]]","";"<tr><td>$([datetime]$_.TimeCreated)</td><td>$log</td></tr>" }
-	"Shutdowns" = Get-WinEvent -FilterHashtable @{"LogName" = "System"; "ProviderName" = "User32"} | ForEach { "<tr><td>$([datetime]$_.TimeCreated)</td><td>$([string]$_.Message)</td></tr>" }
+	"RDP Connections" = Get-WinEvent -FilterHashtable @{"LogName" = "Microsoft-Windows-RemoteDesktopServices-RdpCoreTS/Operational"; "Id" = "131"} | % { $log = [xml]$_.ToXml();$log = $log.Event.EventData.Data[1]."`#text" -replace "[\[\]]","";"<tr><td>$([datetime]$_.TimeCreated)</td><td>$log</td></tr>" }
+	"Shutdowns" = Get-WinEvent -FilterHashtable @{"LogName" = "System"; "ProviderName" = "User32"} | % { "<tr><td>$([datetime]$_.TimeCreated)</td><td>$([string]$_.Message)</td></tr>" }
 	"OS ver" = ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion") | Select-Object ProductName,DisplayVersion,CurrentBuild,UBR).psobject.properties.value -join " "
 	"Sys Model" = ((Get-CimInstance -ClassName Win32_ComputerSystem) | Select-Object Manufacturer,SystemFamily,Model).psobject.properties.value -join " "
 	"SN" = (Get-CimInstance -ClassName Win32_BIOS).SerialNumber
@@ -32,4 +32,3 @@ if($PSBoundParameters.Count -eq 0)
 
 $htmlBuilder += "</body></html>"
 Out-File -FilePath "C:\Users\$([Environment]::UserName)\Desktop\info.html" -InputObject $htmlBuilder -Force
-#test
