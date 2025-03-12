@@ -65,8 +65,9 @@ $htmlBuilder += "<div class='tables'><h2>[$($(hostname).ToUpper())]</h2><table><
 
 foreach($log in (Get-WinEvent -FilterXPath $query -LogName Security -MaxEvents $MaxEvents))
 {
-	$htmlBuilder += "<tr><th colspan='2'>ID: $($log.Id) <br> Created On: $($log.TimeCreated) <br> Level: $($log.LevelDisplayName)</th></tr>"
-	$([xml]$log.ToXml()).Event.EventData.Data | foreach{ $htmlBuilder += "<tr><td><b>$($_.Name)</b></td><td>$($_.'#text')</td></tr>" }
+	$xmlLog = $([xml]$log.ToXml()).Event
+	$htmlBuilder += "<tr><th colspan='2'>ID: $($log.Id) <br> Created On: $($log.TimeCreated) <br> Level: $($log.LevelDisplayName) <br> Process ID: $($xmlLog.System.Execution.ProcessID) </th></tr>"
+	$xmlLog.EventData.Data | foreach{ $htmlBuilder += "<tr><td><b>$($_.Name)</b></td><td>$($_.'#text')</td></tr>" }
 }
 $htmlBuilder += "</table></body></html>"
 Out-File -FilePath "C:\Users\$([Environment]::UserName)\Desktop\sec_events.html" -InputObject $htmlBuilder -Force
